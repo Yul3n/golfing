@@ -2,17 +2,33 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct node {
+typedef struct {
 	int p;
 	int i;
 } Node;
 
+typedef struct {
+	char *s;
+	int   i;
+} WordCount;
+
+int wordsort(const void *, const void *);
 static char *word_for(int);
 static int create_child(int, char);
 static int find_child(int, char);
 
 Node *node;
-long  node_len = 0, max_node_len;
+int  node_len = 0, max_node_len;
+
+int
+wordsort(const void *p1, const void *p2)
+{
+	WordCount *w1, *w2;
+
+	w1 = (WordCount *)p1;
+	w2 = (WordCount *)p2;
+	return w1->i - w2->i;
+}
 
 static char *
 word_for(int p)
@@ -40,10 +56,11 @@ create_child(int p, char c)
 {
 	int len;
 
-	len           = max_node_len;
-	max_node_len += 27;
-	node          = realloc((void *)node, max_node_len);
-	node[len]     = (Node){p, -1};
+	len           = max_node_len - 1;
+	max_node_len += 26;
+	node          = (Node *)realloc((void *)node, sizeof(Node) *
+	                                (size_t)max_node_len);
+	node[len]     = (Node){.p = p, .i = -1};	
 	node[p].p     = len;
 	return len + c;
 }
@@ -55,15 +72,17 @@ find_child(int p, char c)
 		return c;
 	else if (node[p].p == 0)
 		return create_child(p, c);
-	else
+	else {
+		int i = node[p].p + c;
 		return node[p].p + c;
+	}
 }
 
 int
 main(int argc, char **argv)
 {
 	FILE *in;
-	long  len;
+	long  len, wc;
 	char *data;
 	int   p;
 
@@ -85,7 +104,8 @@ main(int argc, char **argv)
 	p = 0;
 	for (int i = 0; i < len; ++i) {
 		char c = (data[i] | 32) - 'a' + 1; /* Get the alphabet index. */
-		if (1 <= c && 1 <= 26)
+		printf("%d\n", p);
+		if (1 <= c && c <= 26)
 			p = find_child(p, c);
 		else {
 			++node[p].i;
@@ -95,6 +115,13 @@ main(int argc, char **argv)
 	++node[p].i;
 	node[0].i = 0;
 
-	for (int i = 1; i < max_node_len; ++i)
+	WordCount words[max_node_len];
+	wc = 0;
+	for (int i = 1; i < max_node_len; ++i) {
 		int count = node[i].i;
+		if (count == 0 || i % 27 == 0) continue;
+		words[wc++] = (WordCount){.s = word_for(i), .i = count};
+	}
+	qsort(&words[0], max_node_len, sizeof(WordCount), wordsort);
+	printf("%d, %s\n", words[0].i, words[0].s);
 }
