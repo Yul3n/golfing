@@ -18,6 +18,7 @@ static int create_child(int, char);
 static int find_child(int, char);
 
 Node *node;
+int  *parents;
 int  node_len = 0, max_node_len;
 
 int
@@ -39,15 +40,16 @@ word_for(int p)
 	i    = 0;
 	size = 256;
 	s    = malloc(size);
-	while (p != 0) {
+	while (p != -1) {
 		c = p % 27;
 		if (++i >= size) {
 			size += 256;
 			s     = realloc(s, size);
 		}
-		*(s + i) = c;
-		p = (p - c) ? node[p - c].p : 0;
+		*(s + i) = 'a' - 1 + c;
+		p = (p - c) ? node[p - c].p : -1;
 	}
+	s[i] = '\0';
 	return s;
 }
 
@@ -60,20 +62,18 @@ create_child(int p, char c)
 	max_node_len += 26;
 	node          = (Node *)realloc((void *)node, sizeof(Node) *
 	                                (size_t)max_node_len);
-	node[len]     = (Node){.p = p, .i = -1};	
 	node[p].p     = len;
+	for (int i = len; i < len + 27; ++i)
+		node[i] = (Node){.p = -1, .i = 0};	
 	return len + c;
 }
 
 static int
 find_child(int p, char c)
 {
-	if (p == 0)
-		return c;
-	else if (node[p].p == 0)
+	if (node[p].p == -1)
 		return create_child(p, c);
 	else {
-		int i = node[p].p + c;
 		return node[p].p + c;
 	}
 }
@@ -99,7 +99,7 @@ main(int argc, char **argv)
 	max_node_len = 27;
 	node         = (Node *)malloc(sizeof(Node) * max_node_len);
 	for (char i = 0; i <= 26; ++i)
-		*(node + i) = ((Node){0, 0});
+		*(node + i) = ((Node){-1, 0});
 
 	p = 0;
 	for (int i = 0; i < len; ++i) {
@@ -114,6 +114,7 @@ main(int argc, char **argv)
 	}
 	++node[p].i;
 	node[0].i = 0;
+	puts("ee");
 
 	WordCount words[max_node_len];
 	wc = 0;
