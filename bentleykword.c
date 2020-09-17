@@ -13,6 +13,7 @@ typedef struct {
 } WordCount;
 
 int wordsort(const void *, const void *);
+static void parent_push(int);
 static char *word_for(int);
 static int create_child(int, char);
 static int find_child(int, char);
@@ -31,6 +32,12 @@ wordsort(const void *p1, const void *p2)
 	return w1->i - w2->i;
 }
 
+static void
+parent_push(int n)
+{
+	parents[node_len++] = n;
+}
+
 static char *
 word_for(int p)
 {
@@ -46,7 +53,7 @@ word_for(int p)
 			size += 256;
 			s     = realloc(s, size);
 		}
-		*(s + i) = 'a' - 1 + c;
+		*(s + i) = 'a' + c;
 		p = (p - c) ? node[p - c].p : -1;
 	}
 	s[i] = '\0';
@@ -58,13 +65,17 @@ create_child(int p, char c)
 {
 	int len;
 
-	len           = max_node_len - 1;
-	max_node_len += 26;
-	node          = (Node *)realloc((void *)node, sizeof(Node) *
-	                                (size_t)max_node_len);
+	len           = max_node_len;
+	max_node_len += 27;
+	printf("%d, %d\n", p, max_node_len);
+	node          = realloc((void *)node, sizeof(Node) *
+	                        (size_t)max_node_len);
+	parents       = realloc((void *)node, sizeof(int) *
+	                        (size_t)max_node_len);
 	node[p].p     = len;
 	for (int i = len; i < len + 27; ++i)
 		node[i] = (Node){.p = -1, .i = 0};
+	parent_push(p);
 	return len + c;
 }
 
@@ -88,33 +99,39 @@ main(int argc, char **argv)
 
 	/* Read the input file. Get the size of the file. */
 	in = fopen(argv[1], "rb");
-	fseek(in, 0, SEEK_END);
+	(void)fseek(in, 0, SEEK_END);
 	len = ftell(in);
 	/* Get the content. */
 	rewind(in);
 	data = (char *)malloc((size_t)len);
-	fread(data, 1, len, in);
+	(void)fread(data, 1, len, in);
 	(void)fclose(in);
 
 	max_node_len = 27;
-	node         = (Node *)malloc(sizeof(Node) * max_node_len);
+	node         = malloc(sizeof(Node) * max_node_len);
+	parents      = malloc(sizeof(int) * max_node_len);
+	parent_push(-1);
 	for (char i = 0; i <= 26; ++i)
 		*(node + i) = ((Node){-1, 0});
 
 	p = 0;
 	for (int i = 0; i < len; ++i) {
-		char c = (data[i] | 32) - 'a' + 1; /* Get the alphabet index. */
-		printf("%d\n", p);
-		if (1 <= c && c <= 26)
-			p = find_child(p, c);
-		else {
+		int c = (data[i] | 32) - 'a'; /* Get the alphabet index. */
+		if (c < 26) {
+			p = c;
+			for (; i < len; ++i) {
+				c = (data[i] | 32) - 'a';
+				puts("ee");
+				if (c < 26)
+					p = find_child(p, c);
+				else
+					break;
+			}
 			++node[p].i;
-			p = 0;
 		}
 	}
 	++node[p].i;
 	node[0].i = 0;
-	puts("ee");
 
 	WordCount words[max_node_len];
 	wc = 0;
