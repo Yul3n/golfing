@@ -64,7 +64,7 @@ create_child(int p, char c)
 	                                (size_t)max_node_len);
 	node[p].p     = len;
 	for (int i = len; i < len + 27; ++i)
-		node[i] = (Node){.p = -1, .i = 0};	
+		node[i] = (Node){.p = -1, .i = 0};
 	return len + c;
 }
 
